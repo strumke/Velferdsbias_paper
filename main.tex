@@ -4,10 +4,11 @@
 %https://jamboard.google.com/d/1sXvXFknnsCVVKOM0gUMgQZ1SR6nCCpizmh6EuMWWojo/viewer?f=0
 
 
-\documentclass[journal]{IEEEtran}
-%\documentclass[english]{article}
+%\documentclass[journal]{IEEEtran}
+\documentclass[english]{article}
 \usepackage[T1]{fontenc}
-\usepackage[latin9]{inputenc}
+\usepackage[utf8]{inputenc}
+%\usepackage[latin9]{inputenc}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{booktabs}
@@ -16,6 +17,7 @@
 \usepackage{enumitem}
 \usepackage[round]{natbib}
 \usepackage{hyperref}
+\usepackage{subcaption}
 \hypersetup{ % set colours for hyperlinks
     colorlinks=true, 
     linkcolor=blue,
@@ -23,48 +25,444 @@
     urlcolor=blue,
     citecolor=blue
 }
+\usepackage{graphicx}
 \usepackage{cleveref}
 \usepackage{bbm}
 \usepackage{multirow}
-\usepackage[nolist,nohyperlinks]{acronym}
+\usepackage[nolist]{acronym}
+\acrodef{SHAP}{SHapley Additive exPlanations}
+\acrodef{SAGE}{Shapley Additive Global importancE}
+\acrodef{RMSE}{Root Mean Squared Error}
+\acrodef{KDE}{Kernel Density Estimator}
 
 \makeatletter
 \makeatother
 
 \title{
-    Bias: Presiseringer og perspektiver}
+    Bias i maskinlæring og statistikk. 
+    Anvendelser på velferdsdata}
 
-\author{Steffen~Maeland$^1$,
+\author{
+    Andrea $^1$,
+    Skriv dere på $^2$,
+    Vi diskuterer rekkefølge $^3$,
+    Senere $^4$,
     Inga~Str\"umke$^2$% <-this % stops a space
 \thanks{$^1$ Jobbeti, jobb, Oslo, Norway}% <-this % stops a space
-\thanks{$^2$SimulaMet, Simula Research Laboratory, Oslo, Norway}%
+\thanks{$^4$SimulaMet, Simula Research Laboratory, Oslo, Norway}%
 }
 % Inga: https://orcid.org/0000-0003-1820-6544
 
+\date{}
     
 \begin{document}
 
 \maketitle
 % ---------------------------------------------
 \begin{abstract}
-    Frist 1. mai
+    % maks 300 ord
+    I følge Norges nasjonale strategi for kunstig intelligens fra 2020 er offentlig forvaltning og helse blant Norges satsningsområder for bruk av kunstig intelligens. Maskinlæring er en sentral undergruppe av kunstig intelligens som både har stort potensiale for å løse en rekke utfordringer, også innenfor velferd og samfunnsforskning, men samtidig er kjent for å gi opphav til utfordringer. Blant disse utfordringene er at tilstedeværende ulikheter i samfunnet representeres i datagrunnlaget som blant annet maskinlæringsmodeller utvikles på. De resulterende modellene står dermed i fare for å adoptere og videreføre ulikhetene i form av innebygget forutinntatthet. Bias, eller skjevhet, er en velkjent utfordring innen statistisk analyse, men begrepet `bias' har ulike definisjoner innen samfunnsforskning, statistikk og maskinlæring, og kan ikke oversettes direkte fra en statistikk- til maskinlæringskontekst. Dette kompliseres av det faktum at ulike typer bias med ulike opphav omtales med samme begrep. I denne artikkelen bidrar vi til å løse denne utfordringen ved å gjennomføre litteratursøk innen statistikk og maskinlæring, og kartlegge ulike forståelser av bias-begrepet. Vi demonstrerer også utfordringen relatert til databaserte modellers oppførsel, gjennom en studie på avidentifiserte registerdata fra NAV. Her demonstrerer vi ulike typer bias, presenterer og diskuterer mulige løsninger, og bruker metoder fra forklarbar kunstig intelligens (explainable artificial intelligence) for å analysere opphavet til bias i de ulike dataegenskapene.
 \end{abstract}
 % ---------------------------------------------
 \section{Introduksjon}
 % ---------------------------------------------
+Vi tar for oss to utfordringer: Den første kommer av det faktum at begrepet `bias' har ulike definisjoner innen samfunnsforskning, statistikk og maskinlæring, og heller ikke kan oversettes direkte fra en statistikk- til maskinlæringskontekst. Denne forsterkes av det faktum at det finnes flere ulike typer bias med ulike opphav, men som omtales med samme begrep. Vi tilnærmer oss denne utfordringen ved å presentere definisjoner med litteratursøk fra statistikk og maskinlæring, og analysere forskjeller og ulikheter mellom de to.
+
+Den andre utfordringen er relatert til databaserte modellers oppførsel som følge av utvikling og bruk på datasett med ulike fordelinger, eller ved ulikheter i klassefordelingen til den avhengige variabelen for trenings- og testdatasettet. Vi gjør en studie på avidentifiserte registerdata fra NAV, hvor vi demonstrerer ulike typer bias og undersøker hva som forårsaker dem. Vi diskuterer ulike tilnærminger til denne typen problemer, og bruker metoder fra forklarbar kunstig intelligens for å analysere de ulike dataegenskapenes bidrag til bias.
+% ---------------------------------------------
+\section{Notater og plan}
+% ---------------------------------------------
+%Yapo and Weiss: Ethical implications of bias in machine learning
+%http://128.171.57.22/bitstream/10125/50557/paper0670.pdf 
+
+%Seleksjonsbias/utvalgsbias i forbindelse med datainnsamling fra en større populasjon (`sample selection bias')(~\cite{grasdal2001performance})
+Inga: Skal vi lene oss på forskjellen mellom ML- og statistikk-bias fra introduksjonen i \href{https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.38.2702&rep=rep1&type=pdf?}{Machine Learning Bias, Statistical Bias, and
+Statistical Variance of Decision Tree Algorithms}?
+%Link til forskningsetikk-side:
+%https://www.forskningsetikk.no/ressurser/fbib/uavhengighet/bias/
+Litteratursøk, definisjoner. Diskusjon om ``bias'' på norsk.\\
+Forventningsverdi er et intergral over sannsynlighetsfordelinger - det gir bare mening i probabilistisk  modellering, som man ikke gjør i maskinlæring. Da har man ingen underliggende statistisk modell; bare en funksjon som tilpasses.
+ML-modellen er deterministisk (gjør det samme for samme input, hver gang). Erstatte forventningserdi med differanse mellom gjennomsnittlig prediksjon og gjennomsnittlig target på samme testdata?
+Modellere / minimere usikkerhet --> annen ML-modell, muligens høyere bias pga lavere varians. 
+% ---------------------------------------------
+\section{Bias}
+% ---------------------------------------------
+Det finnes ingen entydig definisjon i litteraturen som dekker alle former for ``bias'', men overordnet kan det beskrives som \textit{systematisk avvik fra målet til et system}. En utfyllende, norsk oversikt over ulike typer bias er utarbeidet av~\cite{forskningsside}. 
+% ---------------------------------------------
+ 
+\subsection{Bias i dataanalyse}
+Innen statistikk defineres skjevhet, eller bias, i en parameter som systematisk avvik mellom den estimerte parameterverdien og den faktiske parameterverdien~\citep{Delgado-Rodriguez2004BiasEpid,Dohoo2014BiasVet} 
+%også definert i store norske leksikon: %$https://snl.no/bias_i_forskning$ ).
+All skjevhet som er relevant innen statistikk er også relevant for maskinlæring. 
+I maskinlæring kan bias defineres som ``et hvilket som helst grunnlag for at en modellstruktur velges over en annen, annet enn en perfekt gjengivelse av de observerte treningsdataene''~\citep{dietterich1995machine}. Fordi maskinlæringsmodellene kun er modeller av virkeligheten og ikke vil kunne gi en perfekt beskrivelse av dataene, vil alle maskinlæringsmodeller føre til bias ifølge denne definisjonen. Denne typen bias kommer ikke til å bli undersøkt nærmere i denne artikkelen. 
+Skjevheter i data oppstår når det er en forskjell mellom fordelingen til treningsdataene og testdataene~\citep{gianfrancesco2018}. Dette er aktuelt for all modellering av data, ikke kun for maskinlæring. Tidligere forskning har vist at selv mindre endringer i fordelingen kan få maskinlæringsalgoritmer til å predikere svært ulikt~\citep{domingos1999}. Slik skjevhet kan enten skyldes ulike fordelinger i forklaringsvariablene og/eller i den forklarte variabelen\citep{zadrozny2004}. Denne type skjevhet kalles for ``utvalgsskjevhet'' eller ``seleksjonsskjevhet''. 
+
+
+Konseptdrift, på engelsk kjent som ``concept drift'', er en type bias som oppstår når det skjer endringer i et system over tid. Relasjonen mellom forklaringsvariablene og den forklarte variabelen endres, slik at samme type input vil gi en annen respons når det har gått en viss tid. Det kan også oppstå ``utvalgsskjevhet'' slik at noen typer observasjoner (for eksempel en bestemt sykdom) er overreprsentert i perioder. Dersom maskinlæringsmodellen ikke tar høyde for dette, kan prediksjonene gradvis forverres etter hvert som endringene blir større.  Konseptdrift er relevant for ``data streams'', som oversatt til norsk betyr datastrømmer, der nye data kommer inn kontinuerlig og analyseres fortløpende~\citep{webb2016conceptDrift}. Konseptdrift kan være vanskelig å detektere da de observerte endringene kan ha andre årsaker slik som støy, unøyaktigheter eller uteliggere i dataene~\citep{zliobaite2016overviewConcept}. I tillegg kan det være utfordrende å vite nøyaktig når endringene inntraff. En vanlig løsning er med jevne mellomrom å trene maskinlæringsmodellen på nytt med nye og oppdaterte data for å være på den sikre siden. Det finnes også metoder for å detektere når modellen bør trenes på nytt.
+
+Videre kan bias oppstå, ikke som følge av dataenes fordeling, men heller fordi modellen ikke kan gjøre det optimalt med hensyn på alle tapskriterier samtidig. Når én maskinlæringsmodell optimeres etter et tapskriterium, vil den gjøre det dårligere med hensyn til andre tapskriterier~\cite{kleinberg2016Impossibility}. Et tapskriterium kan for eksempel være minste kvadraters metode som bruker mye i lineær regresjon et annet tapskriterium kan være at modellen skal behandle begge kjønn og andre pasientgrupper likt.
 
 % ---------------------------------------------
-\section{The problem}
+\subsection{Andre typer bias}\label{sec:bias_typer}
 % ---------------------------------------------
+%Informasjonsbias er skjevheter som oppstår under selve innsamlingen av dataene og kan skyldes feilrapportering, for eksempel fordi man husker feil, eller feilregistrering~\citep{Delgado-Rodriguez2004BiasEpid}. 
+Skjevhet kan oppstå som følge av at modellprediksjoner blir oversett, misbrukt eller feiltolket~\cite{wall2018humanBias}. For eksempel en saksbehandler som systematisk velger å behandle søkere ulikt selv om retningslinjer eller modellprediksjoner tilsier noe annet~\cite{bertrand2004employment}. Publikasjonsbias, også omtalt som disseminasjonsskjevhet, oppstår når en type forskningsprosjekter publiseres i større grad enn andre~\cite{forskningsside}. 
+Konfundering er en form for skjevhet som kommer av at faktorer som egentlig ikke påvirker utfallet likevel identifiseres som viktige når det heller er andre underliggende faktorer som fører til det observerte utfallet~\citep{RothmanKennethJ2008Konfundering}. Verken saksbehandlerbias, publikasjonsbias eller konfundering vil bli behandlet i denne artikkelen, da det er vanskelig å korrigere for dette fra et maskinlæringsperspektiv.
+
+Fra Hugo: 
+\begin{enumerate}
+    \item De fire casene i Zadrozny og spesielt at bias er på grunn av bias i respons y mellom trening og test (Case 2) eller i en eller flere features (Case 3)
+    \item Relasjonen mellom respons og features er forskjellig i trening og test. Dvs den samme input x gir forskjellig respons y i trening og test. Concept drift detection, det Lars nevnte og underrapporterings-case faller typisk under her. For eksempel for underrapporterings-case: anta at antall legebesøk de tre foregående ukene er x = (75, 100, 100). I treningsdataene forventer vi da en respons på rundt y = 75, mens i testsettet rundt y = 100 (fordi når det oppgis at antall besøk i forrige uke i testsettet er 75, betyr det egentlig 100 på grunn av underrapportering).
+    \item Det Robindra nevnte. Da er det ikke noen bias mellom trening og test, men bias er fordi modellen ikke kan gjøre det optimalt mht alle metrikker på en gang. Gjør vi det optimalt mht en metrikk, introduserer det error/bias mht en annen metrikk.
+\end{enumerate}
+Hvis modellen predikerer forskjellig ressursbehov for kvinner og menn i henhold til det dataene beskriver, vil journalister og lekfolk i dag omtale det som bias. Det er ikke riktig, men det er dette mange av overskriftene om at ``AI is biased'' handler om. Historiske data beskriver ofte mindre behov for noen grupper i befolkningen, fordi disse gruppene har hatt mindre tilgang til eller gjort mindre krav på ressurser, av sosioøkonomiske og politiske grunner, og at dataene reflekterer dette. Det er en stor del av AI-debatten, da modeller utviklet på historiske data slik kan propagere praksis vi ikke ønsker i det moderne samfunnet. 
+Dette er dog noe annet enn at ressursbehovet er responsen i modellen, og modellen foreslår for små ressurser til kvinner sammenlignet med sannheten på grunn av valget av metrikk, som maksimerer noe annet og derfor (må) prioriterer ned kvinnenes behov.
+
+%Bias versus (u)rettferdighet
+Bias i maskinlæring omtales også ofte som at en eller flere grupper behandles ulikt av maskinlæringsmodellen~\citep{bolukbasi2016man,bellamy2018ai,gianfrancesco2018}. Når slik bias er knyttet til egenskaper som omfatter kjønn, etnisitet, religion eller liknende, sier man gjerne at modellen er urettferdig. Rettferdighet, på engelsk kjent som ``fairness'', innen maskinlæring kan defineres som fravær av favorisering av et individ eller en gruppe basert på deres iboende eller tilegnede egenskaper~\citep{mehrabi2019survey}. Urettferdighet skiller seg fra bias ved at modellen benytter egenskaper som ansees som problematiske av samfunnet heller enn at modellen i seg selv presterer dårlig. Likevel er det en relasjon mellom urettferdighet og bias: Dersom en maskinlæringsmodell trenes på historiske data der for eksempel en minoritetsgruppe er underrepresentert i helseregistrene fordi den ikke har hatt like god tilgang på helsetjenester som andre mer priviligerte grupper, kan maskinlæringsmodellen systematisk underpredikere behovet for helsetjenester for denne minoritetsgruppen. Dette vil både falle innunder definisjonen av urettferdighet og være en form for bias (utvalgsskjevhet eller konseptdrift). I denne artikkelen vil fokuset være på bias, og rettferdighet kommer ikke til å bli undersøkt videre. 
+
+%Konkludere med skjevhet eller bias:
+På norsk anbefales det å benytte ``skjevhet'' istedenfor ``bias'' og ``skjevhet'' har blant annet blitt tatt i bruk av Tidsskriftet den norske legeforening. For en mer konkret forståelse av hvilken type skjevhet man diskuterer, bør ordet kombineres med et mer beskrivende ord, slik som ``utvalgsskjevhet''. Vi kommer til å bruke skjevhet videre i artikkelen.
+
+Oppsummert kommer vi til å ta for oss følgende typer skjevheter i artikkelen: utvalgsskjevhet, konseptdrift og skjevhet som følge av at ikke alle metrikker kan optimaliseres samtidig. Korrigeringsmetoder for disse er omtalt i neste avsnitt.
+% ---------------------------------------------
+\subsection{Korrigeringsmetoder for bias}\label{sec:bias_korrigering}
+% ---------------------------------------------
+Ideelt sett ønsker man at distribusjonen til dataene i trenings- og testsett er den samme. Likevel er ikke dette alltid mulig. Det finnes ulike teknikker for å korrigere for skjevhet slik at maskinlæringsmodellene i mindre grad påvirkes. Fokuset i dette avsnittet vil være på skjevhet i forklaringsvariable. 
+
+Hvis fordelingen i trenings- og testsettet er kjent, er en mulig fremgangsmåte å trene modellen på den fordelingen man forventer å se i testsettet. Alternativt, hvis den forventede distribusjonen er kjent, eller det er kjent at feilestimering av den underrepresenterte gruppen har store negative konsekvenser, kan ulik vekting av klassene i treningssettet benyttes, på engelsk kalt ``class weights'', slik at modellen opplever distribusjonen i trenings- og testsett som likere. 
+
+Dersom skjevheten ikke er kjent, kan en probabilistisk klassifiseringsmodell slik som \ac{KDE} benyttes til å estimere fordelingen~\citep{shimodaira2000kde}. Alternativt kan en såkalt ``robust bias-aware'' probabilistisk klassifiseringsmodell benyttes for å estimere fordelingen til testsettet og re-vekte de observerte verdiene i treningssettet deretter~\citep{liu2014}. En annen mulighet er å re-vekte dataene i treningssettet ut fra gjennomsnittsverdier i trenings- og testsett slik at gjennomsnittsverdiene stadig kommer nærmere, på engelsk kjent som ``kernel mean matching''~\citep{huang2006}. Gruppering av observasjonene i testsettet kan også brukes for å estimere fordelingen ved at denne sammenliknes med fordelingen i treningssettet~\citep{cortes2008}. 
+
+For regresjonsproblemer kan ulike teknikker benyttes~\citep{Belitz2021BiasRegresjon}. Emipirisk distribusjons-matching er en metode som sammenligner distribusjonen til prediksjonene til en maskinlæringsmodell med distribusjonen til de observerte verdiene. Videre kan man ved hjelp av regresjon korrigere de estimerte verdiene fra modellen til å bli likere de observerte verdiene~\cite{Belitz2021BiasRegresjon}. 
+
+%Konseptdrift
+Problemer relatert til konseptdrift der relasjonen i dataene endres kan også håndteres på ulike måter. En mye brukt tilnærming er å re-trene modellen med jevne mellomrom eller ved oppdagelse av konseptdrift. Avhengig av type maskinlæringsmodell, kan man også vekte de nyeste observasjonene mer enn de eldre observasjonene og dermed oppmuntre modellen til å lære de nye konseptene. 
+Alternativt kan en ny maskinlæringsmodell trenes på prediksjonene til den opprinnelige modellen og bruke disse for å predikere den forklarte variabelen. 
+En ulempe med begge disse fremgangsmåtene er at det kan være ressurskrevende å re-trene modeller. Dersom modellen kun re-trenes på data som er samlet etter at konseptdriften inntraff, vil man i tillegg ha veldig få observasjoner å trene den nye modellen på. 
+%Dersom man bruker en gruppe med modeller (``ensemble learning'' på engelsk), kan enkeltmodellene vektes ulikt ut fra hvor godt de presterer. Modeller med dårlig prediksjonsevne vil vektes lavere og eventuelt fjernes fra gruppen til fordel for bedre modeller~\citep{tumer1996ensembleConcept}. 
+En siste mulighet er å endre dataene ved konseptdrift før de gis til maskinlæringsmodellen. På denne måten kan den nye trenden utjevnes. Dersom dataene er systematisk høyere eller lavere, kan de reduseres eller økes med en tilsvarende faktor. Dette er særlig nyttig dersom årsaken til konseptdrift er kjent og at man ved å sammenlikne verdiene til forklaringsvariablene før og etter endringen inntraff kan bestemme hvor stor og i hvilken retning (økning/reduksjon) endringen i hver variabel er.   
+ 
+% ---------------------------------------------
+\section{Eksempel 1: Legekonsultasjoner og forskyvning i input-variable}
+% ---------------------------------------------
+Mye forskning har vært viet til prediksjon av fremtidige ressursbehov innen helsevesenet, se for eksempel~\cite{assad2020healthcare,predictHealthcareDemand,ordu2021HealthcareOptimization,CarvalhoSilva2018EmergencyForecast}.
+I denne studien skal vi illustrere skjevheter i en velferdskontekst. Vi ser på problemet å predikere fremtidige legekonsultasjoner. Dersom det er mulig å forutsi hvor mange legekonsultasjoner det vil være i et bestemt geografisk område, vil det kunne være nyttig for planlegging av ressursbruk og bemanning. Det vil bli lettere å sørge for at fastleger og legevakt har nok kapasitet til å imøtekomme fremtidig behov. Dette har vært en utfordring vi har blitt spesielt godt kjent med under den pågående koronapandemien. Videre kan det bidra til å oppnå maksimalt utbytte av helseressursene i det aktuelle geografiske området. Vi vil derfor predikere hvor mange personer som vil oppsøke lege på en uke, basert på data fra tre foregående uker. For å gjøre problemet mer interessant, og fordi personer med alder fra og med 70 år er en sårbar gruppe der en stor andel har behov for god tilgang til lege, velger vi å predikere antall ukentlige legekonsultasjoner for denne gruppen, men basert på data fra hele befolkningen. Dette kan naturligvis utvides til andre pasientgrupper. Analysene vil bli basert på deler av et avidentifisert registerdataset fra NAV, som inneholder samlede besøk til fastlege og legevakt for voksne i Norge, i 20 ulike kommuner fordelt over hele landet, i årene 2006-2008 og 2009-2011. Datasettet ble først brukt til å analysere legevaktbruk etter innføringen av fastlegeordnignen i 2001 ~\cite{goth2014utilization}.
 
 % ---------------------------------------------
-\section{The solution}
+\subsection{Data- og problembeskrivelse}\label{sec:data_problem}
 % ---------------------------------------------
+%Vi analyserer to datasett: Det første starter 1. januar 2006 og slutter 31. desember 2007, og det andre starter 1. januar 2009 og slutter 31. desember 2010. Datasettet fra 2006-2007 inneholder $3\,101\,300$ datapunkter fra $445\,623$ personer. Datasettet fra 2009-2010 inneholder $4\,176\,191$ datapunkter fra $575\,622$ personer. Dette datasettet har informasjon fra to ekstra kommuner som ikke er en del av datasettet fra 2006 og 2007. Etter å ha fjernet data for disse to kommunene, har datasettet fra 2009 og 2010 $4\,001\,512$ datapunkter fra $553\,896$ personer. 
+%Beskrivelse av originale variable
+%De originale variablene i begge datasettene er alder, kjønn, dato for legebesøk, om legebesøket var hos fastlege eller legevakt, personens hjemkommune, om vedkommende har innvandret til Norge eller ikke, personens opprinnelsesland, hvor lenge personen har bodd i Norge samt en identifikasjonsnøkkel som er unik for hver person. 
+%Beskrivelse av konstruerte variable:
+%Datasettene bearbeides for å lage nye konstruerte variable som er bedre egnet problemstillingen vi vil undersøke. For hver av de $20$ kommunene beregnes antall ukentlige legebesøk, til sammen for fastlege og legevakt. Vi definerer to grupper, for å skille mellom personer under 70 år, altså $<70$ år, og personer over 70 år, altså $\geq 70$ år. 
+%For hver av disse gruppene telles antall rader per dag, der hver rad representerer ett legebesøk. Slik bestemmes antall legebesøk per dag. Ved å gruppere dataene basert på kommune finner vi antall daglige legebesøk for hver kommune. Ved å slå sammen daglige besøk på ukenivå finner vi antall ukentlige besøk per gruppe, per kommune. For å predikere totalt antall legebesøk den påfølgende uken bruker vi antall ukentlige besøk for de tre foregående ukene. For hver kommune ender vi altså opp med seks variabler: antall ukentlige besøk for de tre foregående ukene, for personer på henholdsvis $<70$ år og $\geq 70$. Siden datasettet inneholder data fra $20$ kommuner, blir det totale antallet variabler $120$. %Dette illustrerer også grunnen til at vi begrenser oss til $20$ kommuner fra hele landet: Hadde vi inkludert alle Norges kommuner hadde antallet variable blitt så stort at våre senere diskusjoner hadde blitt 
+
+%Alternativ beskrivelse:
+Fra registerdataene teller vi opp totalt antall legekonsultasjoner per uke og per kommune. 
+%lager vi et dataset som beskriver totalt antall ukentlige legekonsultasjoner for pasientgruppene $< 70$ år og $\geq 70$ år. Hver kolonne i datasettet representerer totalt antall legekonsultasjoner for personer i en av gruppene for {\'e}n uke i {\'e}n kommune. Vi velger å studere antall legekonsultasjoner for tre påfølgende uker. For hver kommune har vi dermed tre kolonner som beskriver antall konsultasjoner for personer $< 70$ år og tre kolonner for antall konsultasjoner for personer $\geq 70$ år. Data for totalt 20 kommuner er inkludert, noe som gjør at datasettet vårt har 120 forklaringsvariable som kan brukes til å predikere antall legekonsultasjoner i den påfølgende uken. Hver rad i datasettet representerer konsultasjonstall i de 20 kommunene de tre foregående ukene forut for {\'e}n spesifikk uke. Hver celle inneholder konsultasjonstall for en gitt uke i en gitt kommune for personer som enten er $< 70$ år eller $\geq 70$ år.
+Det totale antall legekonsultasjoner i Oslo kommune over {\'e}n uke (uke 5 i 2006), {\'e}n måned (januar 2006) og hele det første datasettets periode (2006 og 2007), er vist i~\cref{fig:trender}. \Cref{fig:ukestrend} viser en tydelig trend gjennom uken med markant færre legekonsultasjoner i helgene, og~\cref{fig:aarstrender} nedgang i legebesøk i fellesferien, rundt juletider og i påsken. Vi ser også trender med økende antall legekonsultasjoner gjennom våren og spesielt gjennom høsten.
+%
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}{
+        \includegraphics[height=4cm]{figures/week.pdf}
+        \caption{\label{fig:ukestrend}}}
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}{
+        \includegraphics[height=4cm]{figures/years.pdf}
+        \caption{\label{fig:aarstrender}}}
+    \end{subfigure}
+    \caption{\label{fig:trender}(\protect\subref{fig:ukestrend}) Antall legebesøk i Oslo kommune i januar 2006, og
+    (\protect\subref{fig:aarstrender}) antall legebesøk i Oslo kommune i 2006 og 2007.}
+\end{figure}
+
+Antall legebesøk per kommune og per uke blir deretter fordelt på pasientgruppene $< 70$ år og $\geq 70$ år. Vi utvikler maskinlæringsmodeller som predikerer antall legekonsultasjoner for pasientgruppen $\geq 70$ i en kommune den kommende uka basert på antall legekonsultasjoner i den aktuelle kommunen de tre foregående ukene og for den aktuelle pasientgruppen ($\geq 70$) samt pasientgruppen ($< 70$) og tilsvarende for de andre 19 kommunene. Maskinlæringsmodellene vil derfor totalt benytte 120 prediktorer. Motivasjonen for også å inkludere informasjon fra andre kommuner er de kan innholde nyttig informasjon for å forbedre prediksjonene, for eksempel på grunn av spredning av smittsomme sykdommer som influensa over kommunegrensene. Vi gjør prediksjoner for Oslo og Kragerø. Disse to kommunene er valgt fordi de representerer henholdsvis en stor og en liten kommune. Spesielt kan vi se for oss at for å predikere godt for små kommuner kan det være nyttig å benytte data fra andre og større kommuner for å øke den totalte datamengden å trene maskinlæringsmodellene.
+
+%Modellene trenes, det vil si deres parametre tilpasses, på et treningsdatasett, og parametervalgene evalueres underveis i treningen på et såkalt valideringsdatasett. Både trenings- og valideringsdatasettene representerer personer i begge aldersgruppene fra $20$ kommuner i hele landet. Når modellen er ferdig tilpasset, som inntreffer når den finner den kombinasjonen av parametere som gir det laveste tapet på valideringsdatasettet over (minst) $10$ ulike kombinasjoner av parametere, evalueres den på et uavhengig testdatasett. Dette datasettet inneholder data fordelt på samme måte som trenings- og valideringsdataene, men modellen har ikke tilgang til testdataene under trening.
+Modellene trenes, det vil si deres parametre tilpasses, på et treningsdatasett. Deretter testes modellene på et uavhengig testdatasett som ikke blir benyttet under treningen.
+
+Fire ulike typer maskinlæringsmodeller av ulik kompleksitet undersøkes for å predikere neste ukes legekonsultasjoner for personer $\geq 70$ år fra henholdsvis Oslo og Kragerø:
+\begin{enumerate}
+    \item ``XGBoost'', hvilket er et egennavn, og vi derfor ikke oversetter til norsk.  
+    \item ``Random Forest'', som består av en tilfeldig initialisering av beslutningstrær, og vi derfor betegner som tilfeldig-skog-modell.
+    \item Ridge-regresjon.
+    \item Polynomisk regresjon. 
+\end{enumerate}
+Se~\cite{geron2019maskinlaering} for en mer overordnet beskrivelse av de ulike typene maskinlæringsmodeller.
+Den av maskinlæringsmodellene som gir best resultater på testdatasettet til henholdsvis Oslo og Kragerø benyttes videre for å illustrere effekten av skjevheter. 
+% ---------------------------------------------
+\subsection{Prediksjoner og forklaring}
+% ---------------------------------------------
+Siden prediksjon av antall legekonsultasjoner er et regresjonsproblem, benyttes kvadratroten av det kvadrerte avviket mellom modellens prediksjon og den observerte verdien, på engelsk forkortet \ac{RMSE}, som et mål på modellens prestasjon. \ac{RMSE} har samme enhet som verdiene vi ønsker å predikere. 
+
+Når vi evaluerer modellen ønsker vi også å få innsikt i hvilke variabler modellen anser som viktig for å predikere. Forklaringsmetoder basert på det spillteoretiske løsningskonseptet Shapley-verdier~\cite{shapley_original} er populære i maskinlæringslitteraturen, og baserer seg på å regne ut eller approksimere den såkalte Shapley-dekomposisjonen av bidragene de ulike variablene utgjør for modellen. Intuitivt kan Shapley-verdier ses på som den rettferdige andelen av den totale gevinsten i et lagspill hver spiller som deltar i spillet bør få. Shapley-dekomposisjonen har flere appellerende egenskaper. Blant annet vil variable som bidrar like mye få den samme Shapley-verdien, og variable som ikke bidrar får verdien $0$~\cite{Young:1985aa}. 
+%Spesifikt har Shapley-dekomposisjonen de fordelaktive egenskapene (efficiency), monotonisitet (monotonicity) og (equal treatment), og er bevisedlig det eneste løsningskonseptet på gevinstfordelingsproblemet i et (kollaborativt spill/lagspill?) som tilfredsstiller alle disse tre egenskapene (cf. \cite[Thm. 2]{Young:1985aa}).
+
+Å beregne Shapley-verdier eksakt for $N$ variable, krever beregningen av $2^N$ uttrykk, da alle kombinasjonene av samtlige spillere (variable) inkludert og ekskludert fra spillet (modellen) må tas med i beregningen. Dette er i praksis umulig for mer enn $\sim20$ variable, men det finnes flere åpent tilgjengelige Python- og R-biblioteker som approximerer Shapley-verdier raskt. Blant de mest brukte av disse er  \ac{SHAP}~\cite{shap1,shap2,shapr} og \ac{SAGE}, som begge er for kompliserte til at vi vil gi en utførlig beskrivelse av dem her. \ac{SHAP}-verdier beregnes per datapunkt, og indikerer i hvilken retning de ulike variablene trekker modellprediksjonen. Absoluttverdien av disse over et helt datasett kan summeres for å indikere hvor viktig hver variabel er for alle prediksjonene i datasettet totalt. \ac{SAGE}-verdier beregnes derimot på datasettnivå, og indikerer hvor mye hver variabel bidrar til modellens totale tap. Begge metodene er altså en rangering av variablenes viktighet i prediksjonsproblemet, men fra ulike perspektiver. For å approksimere Shapley-verdiene krever begge metodene et bakgrunnsdatasett (for å estimere betingede og marginale sannsynligheter), og vi bruker treningsdataene til dette. 
+
+
+Vi ønsker å undersøke effekten av skjevhet i data. Først evalueres modellene på testdata som følger samme distribusjon som treningsdataene, altså beskriver nøyaktig samme populasjon som modellen ble utviklet på. Det er mye som kan føre til at dette ikke vil være tilfelle når modellen produksjonssettes, og vi vil nå simulere en endring i distribusjonen for nye testdata ved å innføre skjevhet i flere variable. 
+Vi anser det som viktig at modellen er robust mot endringer i variable som kan forekomme når modellen er produksjonssatt, for eksempel at legekontorer rapporterer forsinket eller underrapporterer. Hvis dette skjer, vil alle variablene som beskriver legekonsultasjoner uken før datoen det predikeres for, forskyves mot en lavere verdi. Vi undersøker dette tilfellet i neste seksjon.
+% ---------------------------------------------
+\subsection{Innfører skjevhet gjennom forsinket rapportering}\label{sec:skjevhet2_rapportering}
+% ---------------------------------------------
+Som tidligere nevnt, ønsker vi å predikere antall legekonsultasjoner neste uke for pasienter med alder $70$ år og høyere for å kunne planlegge ressursbruk og bemanning. 
+Vi ser på en situasjon hvor vi antar at det er forsinkelser i rapportering av legekonsultasjoner. Vi antar at modellene ble trent på historiske data som ikke inneholdt disse skjevhetene. Dermed er det en forskjell på dataene som ble benyttet til å trene modellene og dataene som puttes inn i modellen når den benyttes i reell tid. Mer spesfikt vil antall legekonsultasjoner være lavere for dataene som settes inn i modellen i reell tid, enn for dataene som ble benyttet til å trene modellen.
+
+Vi lar antall konsultasjoner for den foregående uken systematisk reduseres til $0.75$ av opprinnelig antall, se~\cref{fig:systematisk_reduksjon} som viser den opprinnelige og forskjøvede fordelingen av konsultasjoner uken før prediksjonstidspunktet for Oslo kommune ($301$). Denne skjevheten innføres i testdatasettene for modellene. Vi lar modellene predikere på testdatasett både med og uten skjevhet for å studere effekten av skjevhet. Denne typen skjevhet kan sees på som en form for utvalgsskjevhet/seleksjonsskjevhet siden vi systematisk opplever avvik i noen av forklaringsvariablene. Det kan også argumenteres for at dette er konseptdrift, i og med at relasjonen mellom forklaringsvariablene og den forklarte variabelen endres. 
+
+\begin{figure}[!th]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/updated_figures/hist_oslo_missing.pdf}
+    \caption{\label{fig:systematisk_reduksjon}
+    Fordelingen for antall ukentlige legekonsultasjoner for personer $\geq 70$ år i Oslo kommune uken før prediksjonstidspunktet. Konsultasjonstall for $21$ ulike uker er inkludert. Blå søyler representerer opprinnelig antall legekonsultasjoner. Lyserød søyler representerer antall konsultasjoner etter en systematisk reduksjon på $0.75$ av opprinnelig antall.   
+    }
+\end{figure}
+
+\subsubsection{Oslo kommune}
+% ---------------------------------------------
+Vi trener en modell på data for 2006, 2007 og 2009 for å predikere antall ukentlige besøk for personer på $\geq 70$ år i Oslo kommune (kommunenummer $301$). Data for tre år benyttes slik at modellen trenes på mest mulig data uten at det blir for lite data igjen for testing. Data fra 2010 benyttes til testing. Fordi Ridge-regresjon gir best resultater på testdatasettet, er det denne typen maskinlæringsmodell vi benytter for prediksjoner i Oslo kommune. 
+Modellens \ac{RMSE} på testdatasettet uten skjevheter er $750$. Videre beregnes \ac{SAGE}- og \ac{SHAP}-verdier. Ifølge både \ac{SAGE}- og \ac{SHAP}-verdiene er antall legekonsultasjoner for personer $< 70$ år i Oslo kommune den foregående uken er viktigste forklaringsvariabel for modellen, se~\cref{fig:SAGE_oslo_2010} og~\cref{fig:SHAP_oslo_2010}. Deretter er antall legebesøk i Bergen ($1201$) i ulike uker viktige. 
+
+Den mest sannsynlige grunnen til at gruppen $<70$ år er viktig for modellen, er at det er relativt flere personer i denne gruppen: Per datapunkt som beskriver en legekonsultasjon for {\'e}n person på $\geq 70$ år er det $3.7$ datapunkter for legekonsultasjoner for personer $<70$ år.
+I tillegg er det mulig at enkelte typer smitte og sykdommer rammer de yngre i samfunnet først, før de sprer seg til personer $\geq 70$ år, men dette er vår spekulasjon. Fordi Oslo og Bergen er de byene i Norge med flest antall innbyggere, kan det forklare hvorfor besøkstall fra disse byene vektlegges av modellen. Bergen har sannsynligvis flere likhetstrekk med Oslo fordi begge er store byer, slik at trender i Bergen kan gjenspeile trender i Oslo. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_oslo_underrapport.pdf}
+    \caption{\label{fig:SAGE_oslo_2010} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_oslo_underrapport.pdf}
+    \caption{\label{fig:SHAP_oslo_2010} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_oslo_2010}) SAGE-verdier og (\protect\subref{fig:SHAP_oslo_2010}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Oslo kommune i 2010.}
+\end{figure}
+
+Videre predikerer vi antall ukentlige legekonsultasjoner for gruppen av personer på $\geq 70$ år i Oslo kommune ($301$) for data fra 2010, med skjevheten i uken før prediksjon. Da øker \ac{RMSE} fra $750$ til $1,011$. \ac{SAGE}- og \ac{SHAP}-verdiene endres også, se~\cref{fig:SAGE_oslo_underrapport} og~\cref{fig:SHAP_oslo_underrapport}. Rekkefølgen til de tre viktigste forklaringsvariablene har endret seg i begge tilfeller.  Etter innføringen av skjevhet, er antall legekonsultasjoner for personer $< 70$ år i Bergen viktigst for modellen ifølge både \ac{SAGE}- og \ac{SHAP}-verdiene. Ifølge \ac{SAGE}-verdiene har antall legekonsultasjoner den foregående uken for personer $\geq 70$ år bosatt i Oslo kommune ($301$) på tredjeplass over viktigste variabler, mens variabel nummer to er den samme før og etter innføring av skjevhet. Ifølge \ac{SHAP}-verdiene er antall konsultasjoner de to siste foregående ukene for personer $< 70$ år bosatt i Oslo på henholdsvis andre- og tredjeplass over viktigste variable. 
+Fordi konsultasjonstallene for den foregående uken systematisk ble redusert, kan dette forklare hvorfor antall legekonsultasjoner den foregående uken ikke lenger er den viktigste forklaringsvariabelen for modellen.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_oslo_underrapport_75.pdf}
+    \caption{\label{fig:SAGE_oslo_underrapport} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_oslo_underrapport75.pdf}
+    \caption{\label{fig:SHAP_oslo_underrapport} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_oslo_underrapport}) SAGE-verdier og (\protect\subref{fig:SHAP_oslo_underrapport}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Oslo kommune i 2010 ved kunstig lave besøkstall for foregående uke.}
+\end{figure}
+
+Antall konsultasjoner for personer $< 70$ år i Oslo kommune den foregående uken er den viktigste forklaringsvariabelen for modellen før skjevhet blir innført. Vi innfører skjevhet i bare denne ene variabelen ved systematisk å endre den til å være $0.75$ av opprinnelige verdi. Når vi så tester modellen med skjevheten i denne ene variabelen øker \ac{RMSE} fra $750$ til $1,182$. Resultatet viser at endringer i kun {\'e}n, men viktig, variabel har større negativ effekt på modellens prediksjoner enn det å endre flere variabler som er mindre viktige for modellen. 
 
 % ---------------------------------------------
-\section{Discusjon og konklusjoner} \label{sec:discussion}
+\subsubsection{Kragerø kommune}
+Som for Oslo kommune, trenes en modell på data fra 2006, 2007 og 2009 og testes på data fra 2010. Denne gangen er formålet til modellen å predikere antall legekonsultasjoner for personer $\geq 70$ år i Kragerø kommune (kommunenummer $815$). Igjen benyttes Ridge-regresjon, da denne presterer best på testdatasettet. På testdatasettet får modellen en \ac{RMSE} på $30$. Dette er lavere enn standardavviket for antall konsultasjoner i denne gruppen, som er på $32$. Kragerø har langt færre innbyggere og legekonsultasjoner enn Oslo, noe som gjenspeiles i lavere absoluttverdier for modellen sine prediksjoner og \ac{RMSE}. Ifølge \ac{SAGE}- og \ac{SHAP}-verdiene i figur~\cref{fig:SAGE_kragero_2010} og~\cref{fig:SHAP_kragero_2010} ser vi at konsultasjonstall for personer $< 70$ år i Oslo kommune ($301$) er den viktigste forklaringsvariabelen for modellen. Videre er antall konsultasjoner for personer $< 70$ år i Bergen tre uker i forveien og personer $\geq 70$ år i Bergen den foregående uken på henholdsvis andre- og tredjeplass ifølge \ac{SAGE}-verdiene, mens konsultasjonstall for personer $< 70$ år i Bergen den foregående uken og to uker i forveien er rangert som henholdsvis nummer to og nummer tre ifølge \ac{SHAP}.
+Fordi Oslo og Bergen er store kommuner som bidrar med mye data, kan dette forklare hvorfor modellen anser antall legekonsultasjoner fra disse kommunene som viktige for å predikere konsultasjonstall Kragerø. 
+Antall konsultasjoner i Kragerø den foreående uken for personer $\geq 70$ er den tolvte viktigste variabelen ifølge \ac{SAGE}-verdiene og er ikke blant de femten viktigste forklaringsvariablene ifølge \ac{SHAP}-verdiene. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_kragero_underrapport.pdf}
+    \caption{\label{fig:SAGE_kragero_2010} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_kragero_underrapport.pdf}
+    \caption{\label{fig:SHAP_kragero_2010} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_kragero_2010}) SAGE-verdier og (\protect\subref{fig:SHAP_kragero_2010}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Kragerø kommune i 2010.}
+\end{figure}
+
+Vi lar også modellen predikere antall konsultasjoner for personer i gruppen $\geq 70$ år i Kragerø kommune ($815$) etter innføring av samme type skjevhet som for Oslo kommune. \ac{RMSE} øker fra $30$ på datasettet uten skjevhet til $38$ på dataene med skjevhet. 
+
+Også her ser vi endringer i \ac{SAGE}- og \ac{SHAP}-verdiene for modellen, se~\cref{fig:SAGE_kragero_underrapport} og~\cref{fig:SHAP_kragero_underrapport}. For \ac{SAGE}-verdiene for datasettet med skjevhet ser vi at rekkefølgen til de tre viktigste forklaringsvariablene er endret slik at den tredje viktigste variabelen ikke lenger er konsultasjonstall for Bergen kommune ($1201$), men for Oslo ($301$). Rekkefølgen til alle de tre viktigste variablene har endret seg for \ac{SHAP}-verdiene. Etter innføring av skjevhet er konsultasjonstall for personer $< 70$ år i Bergen ($1201$) to uker i forveien viktigst, etterfulgt av personer $< 70$ år i Oslo kommune ($301$) to uker i forveien og personer $< 70$ år i Bergen tre uker i forveien. Den videre prioriteringen av forklaringsvariable har også endret seg for både \ac{SAGE}- og \ac{SHAP}-verdiene. 
+\ac{SAGE}- og \ac{SHAP}-verdier har ulike mål for å forklare modellen, noe som vises i at forklaringsvariablene har ulik prioritering for de to forklaringsmetodene.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_kragero_underrapport_75.pdf}
+    \caption{\label{fig:SAGE_kragero_underrapport} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_kragero_underrapport75.pdf}
+    \caption{\label{fig:SHAP_kragero_underrapport} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_kragero_underrapport}) SAGE-verdier og (\protect\subref{fig:SHAP_kragero_underrapport}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Kragerø kommune i 2010 ved kunstig lave konsultasjonstall den foregående uken.}
+\end{figure}
+
+Som for Oslo, er antall legekonsultasjoner for personer $< 70$ år i Oslo kommune den foregående uken er den viktigste forklaringsvariabelen for modell 2 før skjevheten ble innført. Igjen innfører vi skjevhet i bare denne ene variabelen ved systematisk å endre den til å være $0.75$ av opprinnelige verdi. Når vi så tester modellen med skjevheten i denne ene variabelen øker \ac{RMSE} fra $30$ til $57$. Resultatet gjenspeiler det som ble observert for modellen for Oslo kommune; når kun den viktigste forklaringsvariabelen endres, har dette større negativ effekt på modellprediksjonene enn dersom flere, mindre viktige variabler endres. 
 % ---------------------------------------------
-Text
+\subsection{Innfører skjevhet som endring over tid}
+% ---------------------------------------------
+Konseptdrift ble beskrevet i seksjon~\ref{sec:bias_typer} og omfatter endringer i relasjonen mellom forklaringsvariablene og den forklarte variabelen som skjer over tid. To nye modeller trenes på data fra 2006 for å predikere antall legekonsultasjoner for personer $\geq 70$ år i henholdsvis Oslo og Kragerø. Modellene testes først på data fra 2007. For å studere effekten av konseptdrift, lar vi deretter modellene predikere antall legekonsultasjoner for 2010.
+
+
+% ---------------------------------------------
+\subsubsection{Oslo kommune}
+% ---------------------------------------------
+``XGBoost'' er den maskinlæringsmodellen som presterer best på testdatasettet fra 2007 for prediksjoner i Oslo, og benyttes videre for å studere konseptdrift.
+Når modellen testes på data fra 2007, er \ac{RMSE} på $711$. Dette er lavere en standardavviket til antall legekonsultasjoner i målgruppen, som er på $723$ i treningssettet.~\cref{fig:SAGE_oslo_konseptdrift2007} og~\cref{fig:SHAP_oslo_konseptdrift2007} viser de tilhørende \ac{SAGE}- og \ac{SHAP}-verdiene. Vi ser at antall legekonsultasjoner for personer $\geq 70$ år i Halden ($101$) tre uker i forveien er viktigst for prediksjon av legekonsultasjoner i Oslo for personer $\geq 70$ år. Videre er konsultasjonstall for personer $\geq 70$ år i Kragerø ($815$) to uker i forveien og personer $< 70$ år i Oslo kommune den foregående uken viktige.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_oslo_konseptdrift2007.pdf}
+    \caption{\label{fig:SAGE_oslo_konseptdrift2007} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_oslo_konseptdrift2007.pdf}
+    \caption{\label{fig:SHAP_oslo_konseptdrift2007} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_oslo_konseptdrift2007}) SAGE-verdier og (\protect\subref{fig:SHAP_oslo_konseptdrift2007}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Oslo kommune i 2007.}
+\end{figure}
+
+For modellen øker \ac{RMSE} til $2.295$ etter innføring av konseptdrift. Dette er langt mer enn standardavviket til antall legekonsultasjoner i Oslo kommune for personer $\geq 70$ år i Oslo kommune for den predikerte perioden.
+Fordi det har gått noen år mellom dataene modellen ble utviklet på og den siste perioden, kan relasjonen mellom forklaringsvariablene og den forklarte variabelen ha endret seg. Dette kan være med på å forklare hvorfor modellen predikerer klart dårligere på data fra $2010$ enn på data fra $2007$.
+
+Vi ser også at \ac{SAGE}- og \ac{SHAP}-verdiene for prediksjonene for den siste perioden er endret, se~\cref{fig:SAGE_oslo_konseptdrift} og~\cref{fig:SHAP_oslo_konseptdrift}. Når det kommer til \ac{SAGE}-verdiene, har de tre øverste viktigste kommunene for modellen endret seg til Karasjok ($2021$), Lillesand ($429$) og Bergen ($1201$). For Karasjok og Lillesand er antall konsultasjoner for personer $\geq 70$ år to uker i forveien viktig, mens for Bergen er antall konsultasjoner den foregående uken for personer $< 70$ år viktig. For \ac{SHAP}-verdiene har den nest viktigste forklaringsvariabelen endret seg til antall konsultasjoner for personer $< 70$ år bosatt i Meldal ($1636$), og den tredje viktigste variabelen er konsultasjonstall for personer $\geq 70$ år i Lillesand ($429$).  
+Årsaken til de observerte endringene er uviss og kommer sannsynligvis av flere faktorer. Vi ser at når modellen predikerer dårligere, vektlegger den også forklaringsvariable som er mindre åpenbart viktige for å predikere konsultasjoner i Oslo kommune. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_oslo_konseptdrift2010.pdf}
+    \caption{\label{fig:SAGE_oslo_konseptdrift} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_oslo_konseptdrift2010.pdf}
+    \caption{\label{fig:SHAP_oslo_konseptdrift} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_oslo_konseptdrift}) SAGE-verdier og (\protect\subref{fig:SHAP_oslo_konseptdrift}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Oslo kommune ved konseptdrift.}
+\end{figure}
+
+% ---------------------------------------------
+\subsubsection{Kragerø kommune}
+% ---------------------------------------------
+Tilsvarende som for Oslo, trenes en modell på data fra $2006$. Modellen har som mål å predikere antall ukentlige legekonsultasjoner for personer $\geq 70$ år i Kragerø kommune ($815$). Den testes først på data fra $2007$. Her gjør Ridge-regresjon det best og blir derfor brukt videre i eksempelet. \ac{RMSE} for datasettet fra $2007$ er på $22$, noe som er lavere en standardavviket i treningssettet ($25$). Ved å studere \ac{SAGE}- og \ac{SHAP}-verdiene til modell 4, ser vi at ukentlige konsultasjonstall for personer henholdsvis $< 70$ år og $\geq 70$ år foregående uke og personer $< 70$ år to uker i forveien bosatt i Oslo er de tre viktigste forklaringsvariablene. Verdiene er plottet i~\cref{fig:SAGE_kragero_2007} og~\cref{fig:SHAP_kragero_2007}. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_kragero_konseptdrift2007.pdf}
+    \caption{\label{fig:SAGE_kragero_2007} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_kragero_konseptdrift2007.pdf}
+    \caption{\label{fig:SHAP_kragero_2007} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_kragero_2007}) SAGE-verdier og (\protect\subref{fig:SHAP_kragero_2007}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Kragero kommune i 2007.}
+\end{figure}
+
+Ved innføring av konseptdrift øker \ac{RMSE} til $38$, noe som er større enn standardavviket for antall ukentlige legekonsultasjoner for denne gruppen i Kragerø kommune. Dette gjenspeiler resultatene fra konseptdrift for Oslo kommune. 
+
+Fra \cref{fig:SAGE_kragero_konseptdrift} og \cref{fig:SHAP_kragero_konseptdrift} ser vi at \ac{SAGE}- og \ac{SHAP}-verdiene er endret når modellen predikerer på data fra $2010$. Ifølge \ac{SAGE}-verdiene er konsultasjonstall for personer $\geq 70$ år bosatt i henholdsvis Oslo ($301$) og Bergen ($1201$) tre uker i forveien de viktigste variablene for å predikere antall ukentlige legekonsultasjoner for personer $\geq 70$ år i Kragerø. På tredjeplass kommer konsultasjonstall for personer $< 70$ år Oslo kommune tre uker i forveien. Ifølge \ac{SHAP}-verdiene er fortsatt antall legekonsultasjoner for personer $< 70$ år i Oslo ($301$) den foregående uken den viktigste variabelen. På andre- og tredjeplass kommer konsultasjonstall for personer $< 70$ år to uker i forveien og personer $\geq 70$ år den foregående uken som er bosatt i Oslo.
+I motsetning til modellen for Oslo kommune, inneholder de tre viktigste forklaringsvariablene til modellen data fra de samme kommunene (Oslo og Bergen) både før og etter konseptdrift. Likevel er absoluttverdiene til modellen svært annerledes før og etter konseptdrift, og modellprestasjonen er redusert. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SAGE_kragero_konseptdrift2010.pdf}
+    \caption{\label{fig:SAGE_kragero_konseptdrift} }
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\textwidth]{figures/updated_figures/SHAP_kragero_konseptdrift2010.pdf}
+    \caption{\label{fig:SHAP_kragero_konseptdrift} }
+    \end{subfigure}
+    \caption{(\protect\subref{fig:SAGE_kragero_konseptdrift}) SAGE-verdier og (\protect\subref{fig:SHAP_kragero_konseptdrift}) SHAP-verdier for prediksjoner på personer med alder $\geq 70$ år i Kragero kommune ved konseptdrift.}
+\end{figure}
+
+% ---------------------------------------------
+\subsection{(Bias mitigation methods)}
+% ---------------------------------------------
+\subsubsection{Underrapportering}
+For å oppdage og korrigere for skjevheter i forklaringsvariablene, kan man for hver variabel studere forskjellen på fordelingen for trenings- og testsett. Ved å konsekvent manipulere de forklaringsvariablene i testsettet som er systematisk annerledes enn i treningssettet, kan skjevheten korrigeres for. 
+
+\subsubsection{Konseptdrift}
+En mulig tilnærming ved konseptdrift er å re-trene modellen på oppdaterte data. Vi velger derfor å re-trene modellen på data fra 2009 for å se om dette gir bedre prediksjoner for ukentlige besøkstall i 2010. Alternativt kan man trene en ny maskinlæringsmodell på prediksjonene for 2010 til den opprinnelige modellen. (Men usikker på hvordan vi får testet den..?)
+
+% ---------------------------------------------
+\section{Eksempel 2: Prediksjon av varighet for sykefravær}
+% ---------------------------------------------
+
+Vi jobber med å erstatte dagens fagsystem for sykefraværsoppfølging. Vi skal samtidig lage nye og bedre tjenester for veilederne.
+En av våre hypoteser er at det avholdes for mange unødvendige dialogmøter, som stjeler tid fra de involverte partene.  
+Ved å bruke maskinlæring for å predikere sykefraværslengde utover 17 uker ønsker vi å understøtte veileders beslutning om behov for dialogmøte 2.
+
+Den sykmeldte skal kalles inn til dialogmøte 2 med mindre det er «åpenbart unødvendig» jf. § 8-7a andre ledd.
+Det er veilederen på NAV-kontoret som vurderer om den sykmeldte skal kalles inn til dialogmøte 2 eller ikke. Vurderingen gjøres for alle som har vært sykmeldt i mer enn 17 uker. Vurderingen av hva som er å anse som ``åpenbart unødvendig'' er skjønnsmessig og tolket i NAVs rundskriv. Vurderingen beror dels på hva veilederens kunnskap og erfaring om hva som er å anse som ``åpenbart unødvendig'' i det enkelte tilfelle. For at veileder skal kunne gjøre denne vurderingen må det blant annet gjøres oppslag i den sykemeldtes sykmelding, oppfølgingsplaner, samtalereferater, tidligere referater fra dialogmøte 2, informasjon i fagsystemer og eventuelt andre relevante kilder.   
+Ved å bruke en prediksjonsmodell i vurderingen av om den sykmeldte skal innkalles til dialogmøte 2 vil NAV kunne gjøre innkallelsesprosessen bedre og mer effektiv. Ved å bruke prediksjonsmodellen vil NAV oppnå
+
+\begin{itemize}
+\item{\bf Høyere kvalitet i vurderingen.}  
+Prediksjonsmodellen kan bidra til mer treffsikre vurderinger på hvilke møter det er viktig å avholde og hvilke møter som er åpenbart er unødvendig. Høy kvaliteten i denne vurderingen er viktig for å sikre at de møtene som faktisk kan få en betydning for den sykmeldte blir avholdt.   
+\item{\bf Mer enhetlig praksis.} 
+Veiledere har ulik erfaring og kunnskap, noe som gjør at deres vurderinger av en lik sak kan bli ulik. En prediksjonsmodell vil bidra til at like saker blir behandlet likt.  
+\item{\bf Tidsbesparelser for alle aktørene i sykefraværsoppfølgingen.} 
+Hvis vi kan bli mer treffsikre på vurderingen av om det er behov for møtet eller ikke kan vi spare tid for alle aktørene i møtet. Innsiktsarbeid og fForskning1 har vist at det gjennomføres dialogmøte 2 i dag hvor det i ettertid viser seg at møtet var åpenbart unødvendig.  
+\item{\bf Potensielt tettere oppfølging av de som har mest behov for bistand.} 
+Hvis veiledere kan bruke mindre tid på å avholde unødvendige dialogmøter, kan de bruke mer tid på oppfølging av de sykmeldte som trenger det mest. Dette kan bidra til å redusere langtidssykefraværet.  
+\end{itemize}
+
+I første versjon skal algoritmen være beslutningsstøtte til veileder for å vurdere om det er sannsynlig at den sykemeldte kommer til å være sykemeldt mer enn 26 uker. Veileder skal fortsatt ta selve avgjørelsen av om en sykmeldt skal kalles inn til et dialogmøte eller ikke. Prediksjonsresultatet vil bli vurdert opp mot veileders kjennskap til den sykmeldte og arbeidsgiveren. Det vil bli utarbeidet rutiner for å sikre dette. Herunder vil opplysninger i oppfølgingsplanen fra arbeidsgiver og medisinske opplysninger fra den som sykmelder på sykmeldingen bli vurdert. Prediksjonsresultatet vil aldri være avgjørende for utfallet uten vurdering fra veileder (innkalling eller ikke). 
+
+% ---------------------------------------------
+\subsection{Data- og problembeskrivelse}
+% ---------------------------------------------
+
+Vi bruker data fra sykmeldinger fra 2006 til 2020, og begrenser oss til å se på sykefravær som har vart minst 17 uker. Vår utfallsvariabel er sykefraværsvarighet utover 17 uker (maks 365 dager). I utgangspunktet har vi 285 variabler som kan grupperes i følgende kategorier: demografi, diagnoseopplysninger, sykmeldingsgrad, sykmelders forventinger om utvikling av sykefraværet, tid (absolutt og relativ tid) og variabler som handler om hvordan sykmeldinger går gjennom systemet (tidsbruk, manuell/automatisk oppgave).
+
+For datasettet til Simula (dette må vi diskutere!):
+Vi bruker data fra sykmeldinger i perioden januar-april 2020, og begrenser oss til å se på sykefravær som har vart minst 17 uker. Vår utfallsvariabel er sykefraværsvarighet utover 17 uker (maks 365 dager). Vi ser på ~15 variabler som kan grupperes i følgende kategorier: demografi, diagnoseopplysninger, sykmeldingsgrad og næringstilknytning for den sykmeldte.
+
+% ---------------------------------------------
+\subsection{Kalibreringskurver}
+% ---------------------------------------------
+Modellen beskrevet over er en regresjonsmodell som predikerer {\it varigheten} til et sykefravær, ikke hvorvidt den sykemeldte bør kalles inn til dialogmøte 2 eller ikke. Når modellen anvendes som beslutningstøtte, kan den likevel forstås som et binært klassifikasjonsproblem: har den sykemeldte en predikert sykefraværsvarighet som overgår 26 uker eller ikke? Benyttes modellen på denne måten, kan det være nærliggende å tolke predikerte varigheter $\ll$ 26 uker som tilfeller med {\it lav sannsynlighet} for å nå 26 uker, og motsatt for predikerte varigheter $\gg$ 26 uker. Kalibrasjonskurver måler hvorvidt denne intuisjonen stemmer. Deler den predikerte varigheten i 10 like store bins, så bør vi av en velkalibrert modell forvente at kun $30\%$ av tilfellene i bin 3 faktisk passerte 26 uker, mot $80\%$ i bin 8.
+
+Formelt så er en modell kalibrert hvis den for alle score verdier $r$:
+
+\begin{math}
+\mathbb{P}\{Y=1 \mid R=r\} = r\
+\end{math}
+
+mao at gruppen med alle personer som tilegnes en score $r$ har en andel $r$ med positive utfall. 
+En perfekt kalibrert modell vil derfor resultere i en lineær diagonal i et plot av modell score vs andel positive utfall.
+
+Når slike kalibrasjonplot lages og sammenlignes for ulike grupper som direkte eller indirekte inngår i modellen, vil de kunne gi en indikasjon på hvordan modellen behandler tilfeller fra ulike brukergrupper ulikt. Er kalibrasjonskurven f.eks. nær diagonal for en majoritetsgruppe, mens den ligger over eller diagonalen for en minoritetsgruppe, indikerer dette at modellen underestimerer positive utfall for minoritetsgruppen.
+
+
+
+
+
+
+% ---------------------------------------------
+\section{Sammendrag av begreper på engelsk og norsk}
+% ---------------------------------------------
+Inga: Skulle vi hatt et sammendrag av begreper vi innfører? La oss uansett samle dem her for å få en oversikt.
+\begin{itemize}
+    \item   Bias - (forventnings)skjevhet
+    \item   Selection bias - forventningsskjevhet, utvalgsskjevhet
+    \item   Random Forest tilfeldig-skog-modell
+    \item   Ridge regression - Ridge-regresjon
+    \item   Concept drift - konseptdrift
+    \item   Data stream - datastrøm
+    \item   Feature - (forklaringsvariabel? prediktor?)
+    \item   (Maximum likelihood fit, hvis vi gjør det)
+\end{itemize}
+
+% ---------------------------------------------
+\section{Diskusjon og konklusjoner} \label{sec:discussion}
+%Kun et utkast, må gjerne endres:
+Det finnes mange former for skjevheter. Skjevheter i data som benyttes av maskinlæringsmodeller kan ha ulike opphav. Noen av disse kan korrigeres for gjennom maskinlæringsmodellen, men ikke alle. Dersom man korrigerer for en type skjevhet, kan dette få negative konsekvenser for modellens prestasjoner eller at andre skjevheter blir større.
+I samfunnsforskning er det viktig å være bevisst hvilke skjevheter som finnes i dataene og i maskinlæringsmodellene. Det bør gjøres veloverveide avveininger rundt hvilke korreksjoner som eventuelt skal benyttes og hvilke konsekvenser det får. 
+
 % ---------------------------------------------
 \bibliographystyle{plainnat}
 \bibliography{bibliography}
